@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Простейшая видеовстреча</title>
+</head>
+<body>
+<h2>Онлайн-встреча B2B</h2>
+<p>Вставьте ваш ID и подключитесь к партнеру</p>
+
+<input type="text" id="peer-id" placeholder="Ваш ID">
+<button id="start">Начать видео</button>
+<br><br>
+
+<input type="text" id="connect-id" placeholder="ID партнера">
+<button id="connect">Подключиться к партнеру</button>
+
+<div style="display:flex; gap:10px; margin-top:20px;">
+    <video id="my-video" autoplay playsinline muted style="width:300px; border:1px solid #000;"></video>
+    <video id="partner-video" autoplay playsinline style="width:300px; border:1px solid #000;"></video>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+<script>
+let localStream;
+let peer;
+
+// Получаем видео с камеры
+async function startVideo() {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    document.getElementById('my-video').srcObject = localStream;
+}
+
+// Создаем Peer
+document.getElementById('start').onclick = async () => {
+    await startVideo();
+    const id = document.getElementById('peer-id').value;
+    peer = new Peer(id, {
+        host: '0.peerjs.com', port: 443, secure: true
+    });
+
+    peer.on('call', call => {
+        call.answer(localStream); // отвечаем на звонок
+        call.on('stream', remoteStream => {
+            document.getElementById('partner-video').srcObject = remoteStream;
+        });
+    });
+
+    alert('Ваш ID для подключения: ' + id);
+}
+
+// Подключение к партнеру
+document.getElementById('connect').onclick = () => {
+    const connectId = document.getElementById('connect-id').value;
+    const call = peer.call(connectId, localStream);
+    call.on('stream', remoteStream => {
+        document.getElementById('partner-video').srcObject = remoteStream;
+    });
+}
+</script>
+</body>
+</html>
